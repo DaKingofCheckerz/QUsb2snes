@@ -187,11 +187,13 @@ QStringList WSServer::getClientsName(ADevice *dev)
 QStringList WSServer::getClientsName(const QString devName) const
 {
     QStringList toret;
+    sDebug() << "Get Client Name for " << devName;
     QMapIterator<QWebSocket*, WSInfos> wsIit(wsInfos);
     while (wsIit.hasNext())
     {
         auto p = wsIit.next();
-        if (p.value().attachedTo->name() == devName)
+        if (p.value().attachedTo != nullptr &&
+            p.value().attachedTo->name() == devName)
         {
             toret << p.value().name;
         }
@@ -267,7 +269,7 @@ void WSServer::requestDeviceStatus()
 {
     factoryStatusCount = 0;
     factoryStatusDoneCount = 0;
-    for (DeviceFactory* devFac : deviceFactories)
+    for (DeviceFactory* devFac : qAsConst(deviceFactories))
     {
         if (devFac->devicesStatus())
             factoryStatusCount++;

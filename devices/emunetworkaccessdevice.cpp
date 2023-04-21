@@ -226,9 +226,9 @@ void EmuNetworkAccessDevice::nwaGetMemory(const QList<MemoryAddress>& list)
     QList<QPair<int, int> >mems;
     const QString domain = list.first().domain;
     getAddressSizeRequested = 0;
-    for (auto memAdd : list)
+    for (const auto& memAdd : list)
     {
-        sDebug() << "NWa get memory multiple : " << memAdd;
+        //sDebug() << "NWa get memory multiple : " << memAdd;
         mems.append(QPair<int, int>(memAdd.offset, memAdd.size));
         getAddressSizeRequested += memAdd.size;
     }
@@ -239,7 +239,7 @@ void EmuNetworkAccessDevice::prepareWriteMemory(const QList<MemoryAddress>& list
 {
     QList<QPair<int, int> >mems;
     const QString domain = list.first().domain;
-    for (auto memAdd : list)
+    for (const auto& memAdd : list)
     {
         sDebug() << "NWa put memory multiple : " << memAdd;
         mems.append(QPair<int, int>(memAdd.offset, memAdd.size));
@@ -299,7 +299,7 @@ void EmuNetworkAccessDevice::getAddrCommand(SD2Snes::space space, QList<QPair<un
                 return;
             }
             newAddr.size = pairing.second;
-            sDebug() << "Get address" << newAddr;
+            //sDebug() << "Get address" << newAddr;
             if (domain != "" && newAddr.domain != domain)
             {
                 NWAMemoriesToGet.append(QList<MemoryAddress>());
@@ -609,7 +609,7 @@ QList<ADevice::FileInfos> EmuNetworkAccessDevice::parseLSCommand(QByteArray &dat
 {
     Q_UNUSED(dataI);
     QList<ADevice::FileInfos> toret;
-    for (auto finfo : fileInfos)
+    for (const auto& finfo : qAsConst(fileInfos))
     {
         ADevice::FileInfos fi;
         fi.name = finfo.name;

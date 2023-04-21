@@ -37,18 +37,19 @@
 #include <QVBoxLayout>
 #include <QSettings>
 
+#include <ui/wizard/devicesetupwizard.h>
+
 Q_LOGGING_CATEGORY(log_appUi, "APPUI")
 #define sDebug() qCDebug(log_appUi)
 #define sInfo() qCInfo(log_appUi)
 
 #include "../usb2snes.h"
 #include "appui.h"
-#include "../devices/snesclassic.h"
 #include "../wsserver.h"
 #include "tempdeviceselector.h"
 
 
-const  QString             applicationJsonFileName = "qusb2snesapp.json";
+static const  QString             applicationJsonFileName = "qusb2snesapp.json";
 extern QSettings*          globalSettings;
 extern WSServer            wsServer;
 
@@ -101,21 +102,21 @@ void AppUi::init()
 {
     sd2snesAction = new QAction(QIcon(":/img/ikari.ico"), tr("Enable SD2SNES/FxPak pro Support"));
     sd2snesAction->setCheckable(true);
-    connect(sd2snesAction, SIGNAL(triggered(bool)), this, SLOT(onSD2SnesTriggered(bool)));
+    connect(sd2snesAction, &QAction::triggered, this, &AppUi::onSD2SnesTriggered);
 
     retroarchAction = new QAction(QIcon(":/img/retroarch.png"), tr("Enable RetroArch virtual device (use bsnes-mercury if possible)"));
     retroarchAction->setCheckable(true);
-    connect(retroarchAction, SIGNAL(triggered(bool)), this, SLOT(onRetroarchTriggered(bool)));
+    connect(retroarchAction, &QAction::triggered, this, &AppUi::onRetroarchTriggered);
 
-    luaBridgeAction = new QAction(QIcon(":/img/icone-snes9x.gif"), tr("Enable Lua bridge (Snes9x-rr/BizHawk)"));
+    luaBridgeAction = new QAction(QIcon(":/img/icone-snes9x.gif"), tr("Enable Lua bridge - DEPRECATED"));
     luaBridgeAction->setCheckable(true);
-    connect(luaBridgeAction, SIGNAL(triggered(bool)), this, SLOT(onLuaBridgeTriggered(bool)));
+    connect(luaBridgeAction, &QAction::triggered, this, &AppUi::onLuaBridgeTriggered);
 
-    snesClassicAction = new QAction(QIcon(":/img/chrysalis.png"), tr("Enable SNES Classic support (experimental)"));
+    snesClassicAction = new QAction(QIcon(":/img/chrysalis.png"), tr("Enable SNES Classic support"));
     snesClassicAction->setCheckable(true);
-    connect(snesClassicAction, SIGNAL(triggered(bool)), this, SLOT(onSNESClassicTriggered(bool)));
+    connect(snesClassicAction, &QAction::triggered, this, &AppUi::onSNESClassicTriggered);
 
-    emuNWAccessAction = new QAction(QIcon(":/img/mr chip.png"), tr("Enable EmuNetworkAccess (experimental)"));
+    emuNWAccessAction = new QAction(QIcon(":/img/mr chip.png"), tr("Enable EmuNetworkAccess"));
     emuNWAccessAction->setCheckable(true);
     connect(emuNWAccessAction, &QAction::triggered, this, &AppUi::onEmuNWAccessTriggered);
 
@@ -153,50 +154,32 @@ void AppUi::init()
         }
     }
     checkForApplications();
-
-
-#
-
-    connect(qApp, &QCoreApplication::aboutToQuit, [=]() {
+    connect(qApp, &QCoreApplication::aboutToQuit, this, [=]() {
       sysTray->hide();
     });
     if (!globalSettings->contains("FirstTime"))
     {
         globalSettings->setValue("FirstTime", true);
-        TempDeviceSelector selector;
-        if (selector.exec() == QDialog::Accepted)
+        DeviceSetupWizard wiz;
+        if (wiz.exec() == QDialog::Accepted)
         {
-            if (selector.devices.contains("SD2SNES"))
+            if (wiz.deviceSelected() == DeviceSetupWizard::SD2SNES)
             {
                 onSD2SnesTriggered(true);
-#ifdef Q_OS_WIN
-                QMessageBox msg;
-                msg.setText(tr("Do you want to create a entry in the 'Send To' menu in the context menu of Windows to upload file to the sd2snes?"));
-                msg.setInformativeText(tr("This will only be asked once, if you want to add it later go into the Misc menu."));
-                msg.setWindowTitle("QUsb2Snes");
-                msg.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-                msg.setDefaultButton(QMessageBox::Ok);
-                int ret = msg.exec();
-                if (ret == QMessageBox::Ok)
+                if (wiz.contextMenu())
                     addWindowsSendToEntry();
-#endif
             }
-            if (selector.devices.contains("LUA"))
-            {
-                luaBridgeAction->setChecked(true);
-                onLuaBridgeTriggered(true);
-            }
-            if (selector.devices.contains("RETROARCH"))
+            if (wiz.deviceSelected() == DeviceSetupWizard::RETROARCH)
             {
                 retroarchAction->setChecked(true);
                 onRetroarchTriggered(true);
             }
-            if (selector.devices.contains("CLASSIC"))
+            if (wiz.deviceSelected() == DeviceSetupWizard::SNESCLASSIC)
             {
                 snesClassicAction->setChecked(true);
                 onSNESClassicTriggered(true);
             }
-            if (selector.devices.contains("NWA"))
+            if (wiz.deviceSelected() == DeviceSetupWizard::NWA)
             {
                 emuNWAccessAction->setChecked(true);
                 onEmuNWAccessTriggered(true);
@@ -280,7 +263,7 @@ void AppUi::checkForNewVersion(bool manual)
     if (!QSslSocket::supportsSsl())
         return;
     QNetworkAccessManager* manager = new QNetworkAccessManager();
-    QObject::connect(manager, &QNetworkAccessManager::finished, [=](QNetworkReply* reply)
+    QObject::connect(manager, &QNetworkAccessManager::finished, this, [=](QNetworkReply* reply)
     {
         sDebug() << "Finished" << reply->size();
         QByteArray data = reply->readAll();
@@ -573,7 +556,7 @@ void    AppUi::DLManagerRequestFinished(QNetworkReply* reply)
                 QObject::connect(dlReply, &QNetworkReply::redirected, [=] {
                    sDebug() << "DL reply redirected";
                 });
-                QObject::connect(dlReply, &QNetworkReply::downloadProgress, [=](qint64 bytesRcv, qint64 bytesTotal)
+                QObject::connect(dlReply, &QNetworkReply::downloadProgress, this, [=](qint64 bytesRcv, qint64 bytesTotal)
                 {
                     qDebug() << 20 + (bytesRcv / bytesTotal) * 80;
                     dlProgressBar->setValue(20 + (bytesRcv / bytesTotal) * 80);
@@ -601,7 +584,7 @@ void    AppUi::DLManagerRequestFinished(QNetworkReply* reply)
             file.close();
             dlLabel->setText(QObject::tr("Starting the Windows Updater"));
             QProcess::startDetached(qApp->applicationDirPath() + "/WinUpdater.exe");
-            QTimer::singleShot(200, [=] {qApp->exit(0);});
+            QTimer::singleShot(200, this, [=] {qApp->exit(0);});
          } else {
              dlWindow->hide();
              QMessageBox::warning(nullptr, tr("Error downloading the updater"), tr("There was an error downloading or writing the updater file, please try to download it manually on the release page"));
@@ -649,6 +632,7 @@ static bool    searchForQUsb2snesEntry(QString qmlFile)
 
 static QString  searchWindowTitle(QString qmlFile)
 {
+    static QRegularExpression exp("windowTitle\\s*\\:\\s*\"(.+)\"");
     QFile f(qmlFile);
     sDebug() << "Searching in " << qmlFile;
     if (f.open(QIODevice::Text | QIODevice::ReadOnly))
@@ -661,11 +645,11 @@ static QString  searchWindowTitle(QString qmlFile)
             if (line.indexOf("windowTitle") != -1)
             {
                 sDebug() << line;
-                QRegExp exp("windowTitle\\s*\\:\\s*\"(.+)\"");
-                if (exp.indexIn(line) != -1)
+                auto match = exp.match(line);
+                if (match.hasMatch())
                 {
-                    sDebug() << "Found : " << exp.cap(1);
-                    return exp.cap(1);
+                    sDebug() << "Found : " << match.captured(1);
+                    return match.captured(1);
                 }
             }
          }

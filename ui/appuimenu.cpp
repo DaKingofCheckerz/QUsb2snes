@@ -25,6 +25,10 @@ void    AppUi::setMenu()
         handleMagic2Snes(qApp->applicationDirPath() + "/Magic2Snes");
     if (!QFile::exists(qApp->applicationDirPath() + "/Magic2Snes") && globalSettings->value("Magic2SnesLocation").toString().isEmpty())
         handleMagic2Snes("");
+    if (checkPopTracker())
+    {
+        addPopTrackerMenu();
+    }
     if (!globalSettings->value("Magic2SnesLocation").toString().isEmpty())
         handleMagic2Snes(globalSettings->value("Magic2SnesLocation").toString());
     menu->addSeparator();
@@ -34,7 +38,7 @@ void    AppUi::setMenu()
         bool noUpdate = globalSettings->contains("windowNoUpdate") && globalSettings->value("windowNoUpdate").toBool();
         if (!noUpdate)
         {
-            QObject::connect(miscMenu->addAction(QIcon(":/img/updateicon.svg"), tr( "Check for Update")), &QAction::triggered, [this] {
+            QObject::connect(miscMenu->addAction(QIcon(":/img/updateicon.svg"), tr( "Check for Update")), &QAction::triggered, this, [this] {
                 this->checkForNewVersion(true);
             });
         }
@@ -58,7 +62,7 @@ void    AppUi::setMenu()
         debugLogAction->setCheckable(true);
         debugLogAction->setChecked(globalSettings->value("debugLog").toBool());
         debugLogAction->setToolTip(tr("Enable the creation of a log file with lot of debug informations"));
-        QObject::connect(debugLogAction, &QAction::changed, [=]() {
+        QObject::connect(debugLogAction, &QAction::changed, this, [=]() {
             if (debugLogAction->isChecked())
             {
                 QMessageBox msg;
@@ -114,7 +118,7 @@ void AppUi::setLinuxDeviceMenu()
 
 void AppUi::onMenuHovered(QAction* action)
 {
-    sDebug() << "Menu hovered";
+    //sDebug() << "Menu hovered";
     if (action != deviceMenu->menuAction())
         return ;
     if (checkingDeviceInfos)
@@ -162,8 +166,10 @@ void AppUi::onDeviceFactoryStatusReceived(DeviceFactory::DeviceFactoryStatus sta
     } else {
         statusString = status.name + " : ";
     }
+    //sDebug() << "Checking status";
     if (status.deviceNames.isEmpty())
     {
+        //sDebug() << "No device, factory status";
         if (status.generalError == Error::DeviceFactoryError::DFE_NO_ERROR)
         {
             statusString.append(QString("%1").arg(status.statusString()));
@@ -171,7 +177,8 @@ void AppUi::onDeviceFactoryStatusReceived(DeviceFactory::DeviceFactoryStatus sta
             statusString.append(QString("%1").arg(status.errorString()));
         }
     } else {
-        for(QString name : status.deviceNames)
+        //sDebug() << "Each device Status" << status.deviceNames;
+        for(QString& name : status.deviceNames)
         {
             statusString = "       ";
             auto& deviceStatus = status.deviceStatus[name];
@@ -194,7 +201,6 @@ void AppUi::onDeviceFactoryStatusReceived(DeviceFactory::DeviceFactoryStatus sta
             statusString.clear();
         }
     }
-
     if (status.deviceNames.isEmpty())
     {
         deviceMenu->addAction(statusString);
@@ -233,6 +239,12 @@ void AppUi::onAppsMenuTriggered(QAction *action)
         wDir = qApp->applicationDirPath();
 #ifdef Q_OS_WIN
         arg << "-platformpluginpath" << qApp->applicationDirPath() + "/platforms/";
+        if (!QFileInfo::exists(appInfo.folder + "/styles/"))
+        {
+            QDir d(appInfo.folder);
+            d.mkdir("styles");
+            QFile::copy(qApp->applicationDirPath() + "/styles/qwindowsvistastyle.dll", appInfo.folder + "/styles/qwindowsvistastyle.dll");
+        }
 #endif
     }
 #ifdef Q_OS_WIN

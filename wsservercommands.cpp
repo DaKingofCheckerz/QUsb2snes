@@ -333,7 +333,7 @@ void    WSServer::executeRequest(MRequest *req)
                 device->putAddrCommand(req->space, vputArgs);
             } else { // Please don't use VPUT
                 sDebug() << "VPUT that get spliced";
-                spliced = true;
+                //spliced = true;
                 device->putAddrCommand(req->space, vputArgs.at(0).first, vputArgs.at(0).second);
                 putSize = vputArgs.at(0).second;
                 unsigned int totalSize = putSize;
@@ -529,14 +529,14 @@ void    WSServer::asyncDeviceList()
     sDebug() << "Async device list";
     deviceList.clear();
     pendingDeviceListQuery = 0;
-    for (auto devFact : deviceFactories)
+    for (auto devFact : qAsConst(deviceFactories))
     {
         if (!devFact->hasAsyncListDevices())
         {
             deviceList.append(devFact->listDevices());
         }
     }
-    for (auto devFact : deviceFactories)
+    for (auto devFact : qAsConst(deviceFactories))
     {
         if (devFact->hasAsyncListDevices())
         {
@@ -552,12 +552,12 @@ void    WSServer::onDeviceListDone()
     pendingDeviceListQuery--;
     if (pendingDeviceListQuery != 0)
             return;
-    for (auto ws : pendingDeviceListWebsocket)
+    for (auto ws : qAsConst(pendingDeviceListWebsocket))
     {
         sDebug() << "Sending device list to " << wsInfos[ws].name;
         sendReply(ws, deviceList);
     }
-    for (MRequest* req : pendingDeviceListRequests)
+    for (MRequest* req : qAsConst(pendingDeviceListRequests))
     {
         sInfo() << "Device request finished - " << *req << "processed in " << req->timeCreated.msecsTo(QTime::currentTime()) << " ms";
         delete req;

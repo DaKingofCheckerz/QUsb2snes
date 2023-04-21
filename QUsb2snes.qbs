@@ -6,7 +6,7 @@ Project {
     QtApplication {
         name : "QUsb2Snes"
         cpp.cxxLanguageVersion: "c++11"
-        cpp.includePaths: ["devices/EmuNWAccess-qt"]
+        cpp.includePaths: ["devices/EmuNWAccess-qt", "./"]
         consoleApplication: false
         files: [
             "TODO",
@@ -17,6 +17,7 @@ Project {
             "ui/appui.cpp",
             "ui/appuimenu.cpp",
             "ui/appui.h",
+            "ui/appuipoptracker.cpp",
             "ui/tempdeviceselector.cpp",
             "ui/tempdeviceselector.h",
             "ui/tempdeviceselector.ui",
@@ -62,6 +63,21 @@ Project {
             "devices/sd2snesdevice.h",
             "devices/snesclassic.cpp",
             "devices/snesclassic.h",
+            "ui/wizard/deviceselectorpage.cpp",
+            "ui/wizard/deviceselectorpage.h",
+            "ui/wizard/deviceselectorpage.ui",
+            "ui/wizard/devicesetupwizard.cpp",
+            "ui/wizard/devicesetupwizard.h",
+            "ui/wizard/devicesetupwizard.ui",
+            "ui/wizard/lastpage.cpp",
+            "ui/wizard/lastpage.h",
+            "ui/wizard/lastpage.ui",
+            "ui/wizard/retroarchpage.cpp",
+            "ui/wizard/retroarchpage.h",
+            "ui/wizard/retroarchpage.ui",
+            "ui/wizard/sd2snespage.cpp",
+            "ui/wizard/sd2snespage.h",
+            "ui/wizard/sd2snespage.ui",
             "usb2snes.h",
             "wsserver.cpp",
             "wsserver.h",
@@ -91,48 +107,4 @@ Project {
             cpp.frameworks: ["Foundation"]
         }
     }
-
-    QtApplication {
-        condition: qbs.targetPlatform.contains("windows")
-        name : "TestQUsb2Snes"
-        cpp.cxxLanguageVersion: "c++11"
-        files: [
-            "testmain.cpp",
-            "client/usb2snes.h",
-            "client/usb2snes.cpp"
-        ]
-
-        Group {
-            fileTagsFilter: "application"
-            qbs.install: true
-        }
-
-        Depends {
-            name: "Qt"
-            submodules: ["core", "network", "websockets"]
-        }
-    }
-
-    /*
-    Product {
-        name : "deploy"
-        Depends {
-            name : "QUsb2Snes"
-        }
-        Rule {
-            inputsFromDependencies: ["application"]
-            prepare : {
-                var cmd = new Command("windeploy-qt", ["--no-translations",
-                                                       "--no-system-d3d-compiler",
-                                                       "--no-opengl",
-                                                       "--no-svg",
-                                                       "--no-webkit",
-                                                       "--no-webkit2",
-                                                       inputs[0].filePath])
-                cmd.description = "Running windeply-qt"
-                return cmd
-            }
-        }
-
-    }*/
 }

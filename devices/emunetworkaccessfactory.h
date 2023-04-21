@@ -46,7 +46,6 @@ public:
     QStringList listDevices();
     ADevice *attach(QString deviceName);
     bool deleteDevice(ADevice *);
-    QString status();
     QString name() const;
     bool hasAsyncListDevices();
     bool asyncListDevices();
@@ -65,6 +64,7 @@ private:
     bool    doingDeviceStatus;
     bool    doingDeviceList;
     DeviceFactoryStatus  devFacStatus;
+    unsigned short          startingPort;
 
     void    checkStatus();
     void    checkFailed(EmuNWAccessClient* client, Error::DeviceError);
