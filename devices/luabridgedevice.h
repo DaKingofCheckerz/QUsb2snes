@@ -59,6 +59,12 @@ public:
     QTcpSocket* socket();
     QString luaName() const;
 
+    enum EmuType {
+		SNES9X,
+		BIZHAWK,
+		MESEN_S
+	};
+
 public slots:
     bool open();
     void close();
@@ -75,7 +81,7 @@ private:
     QString         m_name;
     unsigned int    putAddr;
     unsigned int    putSize;
-    bool            bizhawk;
+    enum EmuType	emuType;
     enum rom_type   romMapping;
     QString         gameName;
     bool            infoReq;
